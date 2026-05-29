@@ -36,11 +36,17 @@ def home():
             "desc": "Explore clustering of Flemish cycling monitoring sites based on traffic patterns and site characteristics.",
             "href": "/clusters",
         },
+        {
+            "icon": "📊",
+            "title": "Circulation Plan Analysis",
+            "desc": "Compare observed cyclist counts against a weather-normalised baseline before and after circulation plan changes in Aalst and Kortrijk.",
+            "href": "/circulation",
+        },
     ]
 
     card_items = "".join(
         f"""
-        <a class="nav-card" href="{c['href']}" target="_self">
+        <a class="nav-card" href="{c['href']}" onclick="window.parent.location.href='{c['href']}'; return false;">
             <div class="nav-card-icon">{c['icon']}</div>
             <div class="nav-card-title">{c['title']}</div>
             <div class="nav-card-desc">{c['desc']}</div>
@@ -96,5 +102,6 @@ pg = st.navigation([
     st.Page("timelapse_tool/timelapse_app.py",        title="Cycling Timelapse",        icon="🚴",  url_path="timelapse"),
     st.Page("accident_model/07_GTRI_dashboard.py",    title="Accident Risk",            icon="⚠️",  url_path="accident-risk"),
     st.Page("model_cluster/app.py",                   title="Cluster Analysis",         icon="🔵",  url_path="clusters"),
+    st.Page("weather_model/case_study.py",            title="Circulation Plan Analysis",icon="📊",  url_path="circulation"),
 ])
 pg.run()
