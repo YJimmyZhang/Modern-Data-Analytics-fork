@@ -11,57 +11,78 @@ def home():
     )
     st.divider()
 
-    st.markdown("""
-    <style>
-    [data-testid="stPageLink"] a {
-        font-weight: 700;
-        font-size: 1rem;
-        text-decoration: none !important;
-    }
-    [data-testid="stPageLink"] p { margin-bottom: 0; }
-    </style>
-    """, unsafe_allow_html=True)
-
     cards = [
         {
             "icon": "🌤️",
             "title": "Weather Simulation",
             "desc": "Predict cyclist counts at Flemish monitoring sites based on weather conditions and time of day. Adjust sliders to simulate different scenarios.",
-            "page": "weather_model/weather_hub.py",
+            "url": "weather",
         },
         {
             "icon": "🚴",
             "title": "Cycling Timelapse",
             "desc": "Watch an animated map of real cyclist traffic flow across Flanders. See which sites are busiest hour by hour throughout the day.",
-            "page": "timelapse_tool/timelapse_app.py",
+            "url": "timelapse",
         },
         {
             "icon": "⚠️",
             "title": "Accident Risk",
             "desc": "Explore the GTRI accident risk model. Identify high-risk sites based on weather, traffic volume, and temporal patterns across Flanders.",
-            "page": "accident_model/07_GTRI_dashboard.py",
+            "url": "accident-risk",
         },
         {
             "icon": "🔵",
             "title": "Cluster Analysis",
             "desc": "Explore clustering of Flemish cycling monitoring sites based on traffic patterns and site characteristics.",
-            "page": "model_cluster/app.py",
+            "url": "clusters",
         },
         # {
         #     "icon": "📊",
         #     "title": "Circulation Plan Analysis",
         #     "desc": "Compare observed cyclist counts against a weather-normalised baseline before and after circulation plan changes in Aalst and Kortrijk.",
-        #     "page": "weather_model/case_study.py",
+        #     "url": "circulation",
         # },
     ]
 
-    cols = st.columns(len(cards))
-    for col, card in zip(cols, cards):
-        with col:
-            with st.container(border=True):
-                st.markdown(f"<div style='font-size:1.8rem;line-height:1;margin-bottom:0.3rem'>{card['icon']}</div>", unsafe_allow_html=True)
-                st.page_link(card["page"], label=card["title"])
-                st.caption(card["desc"])
+    card_html = """
+    <style>
+    .card-grid { display: flex; gap: 1rem; }
+    .card-link {
+        flex: 1;
+        text-decoration: none !important;
+        color: inherit;
+    }
+    .card-link:hover .card-box {
+        border-color: #aaa;
+        background: #f7f7f7;
+    }
+    .card-box {
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        height: 100%;
+        box-sizing: border-box;
+        transition: border-color 0.15s, background 0.15s;
+        cursor: pointer;
+    }
+    .card-icon { font-size: 1.8rem; line-height: 1; margin-bottom: 0.4rem; }
+    .card-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.4rem; }
+    .card-desc { font-size: 0.85rem; color: #666; margin: 0; }
+    </style>
+    <div class="card-grid">
+    """
+    for card in cards:
+        card_html += f"""
+        <a class="card-link" href="{card['url']}" target="_self">
+            <div class="card-box">
+                <div class="card-icon">{card['icon']}</div>
+                <div class="card-title">{card['title']}</div>
+                <p class="card-desc">{card['desc']}</p>
+            </div>
+        </a>
+        """
+    card_html += "</div>"
+    st.markdown(card_html, unsafe_allow_html=True)
 
     st.divider()
     
