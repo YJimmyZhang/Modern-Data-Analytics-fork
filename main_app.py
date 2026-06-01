@@ -44,43 +44,27 @@ def home():
         # },
     ]
 
-    card_html = """
-    <style>
-    .card-grid { display: flex; gap: 1rem; }
-    .card-link {
-        flex: 1;
-        text-decoration: none !important;
-        color: inherit;
-    }
-    .card-link:hover .card-box {
-        border-color: #aaa;
-        background: #f7f7f7;
-    }
-    .card-box {
-        border: 1px solid #e0e0e0;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        height: 100%;
-        box-sizing: border-box;
-        transition: border-color 0.15s, background 0.15s;
-        cursor: pointer;
-    }
-    .card-icon { font-size: 1.8rem; line-height: 1; margin-bottom: 0.4rem; }
-    .card-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.4rem; }
-    .card-desc { font-size: 0.85rem; color: #666; margin: 0; }
-    </style>
-    <div class="card-grid">
-    """
+    card_html = (
+        "<style>"
+        ".card-grid{display:flex;gap:1rem;}"
+        ".card-link{flex:1;text-decoration:none!important;color:inherit;}"
+        ".card-link:hover .card-box{border-color:#aaa;background:#f7f7f7;}"
+        ".card-box{border:1px solid #e0e0e0;border-radius:0.5rem;padding:1rem;height:100%;box-sizing:border-box;transition:border-color 0.15s,background 0.15s;cursor:pointer;}"
+        ".card-icon{font-size:1.8rem;line-height:1;margin-bottom:0.4rem;}"
+        ".card-title{font-weight:700;font-size:1rem;margin-bottom:0.4rem;}"
+        ".card-desc{font-size:0.85rem;color:#666;margin:0;}"
+        "</style>"
+        '<div class="card-grid">'
+    )
     for card in cards:
-        card_html += f"""
-        <a class="card-link" href="{card['url']}" target="_self">
-            <div class="card-box">
-                <div class="card-icon">{card['icon']}</div>
-                <div class="card-title">{card['title']}</div>
-                <p class="card-desc">{card['desc']}</p>
-            </div>
-        </a>
-        """
+        card_html += (
+            f'<a class="card-link" href="{card["url"]}" target="_self">'
+            f'<div class="card-box">'
+            f'<div class="card-icon">{card["icon"]}</div>'
+            f'<div class="card-title">{card["title"]}</div>'
+            f'<p class="card-desc">{card["desc"]}</p>'
+            f'</div></a>'
+        )
     card_html += "</div>"
     st.markdown(card_html, unsafe_allow_html=True)
 
