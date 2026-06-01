@@ -39,6 +39,10 @@ streamlit run main_app.py
 
 To reproduce the GTRI model from scratch, run the seven scripts inside `accident_model/` in order (01 through 06), then launch script 07 or the main app. Raw data files are not tracked in this repository — see `.gitignore` for what needs to be obtained externally (AWV monthly CSVs, Statbel Excel file). The Open-Meteo weather data is fetched automatically by script 04.
 
+## Deployed Application
+
+Alternatively, view the application, deployed on Streamlit, [here](https://modern-data-analytics-k8qrr7kgim74desqswk6pw.streamlit.app/).
+
 ## Link to Datasets
 
 AWV bike sensor data is available through the Flemish open data portal. Statbel accident microdata (`OPENDATA_MAP_2017-2024.xlsx`) is available at [statbel.fgov.be](https://statbel.fgov.be). Weather data is fetched automatically from [archive-api.open-meteo.com](https://archive-api.open-meteo.com) (no API key required).
