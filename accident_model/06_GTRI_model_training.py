@@ -9,8 +9,10 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 # by GTRI_feature_engineering.py. The Tweedie objective with variance power 1.5 is
 # appropriate for accident count data: sparse, zero-inflated, and strictly non-negative.
 #
-# The chronological split (train: 2019-2023, test: 2024) mirrors real deployment
-# conditions — the model is evaluated on data it could not have seen during training.
+# A three-way chronological split (fit: 2019-2022, validation: 2023, test: 2024)
+# mirrors real deployment conditions and keeps the 2024 test year completely
+# untouched: early stopping is monitored on the 2023 validation year, never on the
+# test year, so the reported 2024 metrics are an honest out-of-sample estimate.
 #
 # Output: GTRI_model_artifacts.pkl containing the trained model, the dynamic baseline
 # risk value, the feature name list, and evaluation metrics. The baseline risk is the
@@ -49,23 +51,33 @@ if missing_features:
     )
 
 # ==========================================
-# 2. CHRONOLOGICAL TRAIN / TEST SPLIT
+# 2. CHRONOLOGICAL FIT / VALIDATION / TEST SPLIT
 # ==========================================
-print("Splitting data chronologically (train: 2019-2023 | test: 2024)...")
-train_df = df[df['Year'] < 2024]
+# Three-way time split so the 2024 test year stays completely untouched:
+#   fit period  : 2019-2022  -> trees are grown here
+#   validation  : 2023       -> early-stopping monitor (picks the tree count)
+#   test period : 2024       -> used ONCE, for final reporting only
+# Early stopping must never see the test year; otherwise the test set influences
+# model selection and the reported metrics are optimistically biased.
+print("Splitting data chronologically (fit: 2019-2022 | val: 2023 | test: 2024)...")
+fit_df   = df[df['Year'] <= 2022]
+val_df   = df[df['Year'] == 2023]
+train_df = df[df['Year'] <  2024]   # fit + val combined; used to refit the final model
 test_df  = df[df['Year'] == 2024]
 
+X_fit,   y_fit   = fit_df[features],   fit_df[target]
+X_val,   y_val   = val_df[features],   val_df[target]
 X_train, y_train = train_df[features], train_df[target]
 X_test,  y_test  = test_df[features],  test_df[target]
 
-print(f"Train: {len(X_train):,} rows  |  accident hours: {(y_train > 0).sum():,}")
-print(f"Test:  {len(X_test):,} rows   |  accident hours: {(y_test  > 0).sum():,}")
+print(f"Fit:   {len(X_fit):,} rows  |  accident hours: {(y_fit > 0).sum():,}")
+print(f"Val:   {len(X_val):,} rows  |  accident hours: {(y_val > 0).sum():,}")
+print(f"Test:  {len(X_test):,} rows  |  accident hours: {(y_test > 0).sum():,}")
 
 # ==========================================
 # 3. TRAIN TWEEDIE REGRESSOR
 # ==========================================
-print("\nTraining LightGBM Tweedie regressor...")
-model = lgb.LGBMRegressor(
+common_params = dict(
     objective='tweedie',
     tweedie_variance_power=1.5,   # standard choice for zero-inflated count data
     n_estimators=1000,
@@ -77,11 +89,24 @@ model = lgb.LGBMRegressor(
     n_jobs=-1
 )
 
-model.fit(
-    X_train, y_train,
-    eval_set=[(X_test, y_test)],
+# Step 1: grow trees on 2019-2022 and let the 2023 validation loss decide how many
+# trees to keep. The test year (2024) plays no part in this selection.
+print("\nStep 1: fitting on 2019-2022, early stopping on the 2023 validation year...")
+search_model = lgb.LGBMRegressor(**common_params)
+search_model.fit(
+    X_fit, y_fit,
+    eval_set=[(X_val, y_val)],
     callbacks=[lgb.early_stopping(stopping_rounds=50), lgb.log_evaluation(100)]
 )
+
+best_iter = search_model.best_iteration_ or common_params['n_estimators']
+print(f"Early stopping selected {best_iter} trees (validated on 2023).")
+
+# Step 2: refit the final model on the full training window (2019-2023) with the
+# tree count chosen above. No eval_set here, so 2024 remains a clean holdout.
+print(f"\nStep 2: refitting final model on 2019-2023 with {best_iter} trees...")
+model = lgb.LGBMRegressor(**{**common_params, 'n_estimators': best_iter})
+model.fit(X_train, y_train)
 
 # ==========================================
 # 4. EVALUATION METRICS
@@ -139,10 +164,11 @@ print(importance_df.to_string(index=False))
 # ==========================================
 # 5. SAVE ARTIFACTS
 # ==========================================
-# Baseline risk is the mean predicted value across the full dataset (train + test).
-# Using all data gives a stable reference for normalising site scores in the dashboard.
-y_pred_all    = model.predict(df[features])
-baseline_risk = float(y_pred_all.mean())
+# Baseline risk is the mean predicted value across the TRAINING window only (2019-2023).
+# Keeping the 2024 test year out of the dashboard's normalisation reference is consistent
+# with the rest of the pipeline and avoids letting held-out data influence the baseline.
+y_pred_train  = model.predict(X_train)
+baseline_risk = float(y_pred_train.mean())
 
 print(f"\nComputed baseline_risk = {baseline_risk:.6f}")
 
@@ -154,8 +180,11 @@ artifacts = {
     'model': model,
     'baseline_risk': baseline_risk,
     'feature_names': features,
+    'fit_period': '2019-2022',
+    'validation_period': '2023',
     'training_period': '2019-2023',
     'test_period': '2024',
+    'n_estimators_selected': int(best_iter),
     'metrics': {
         'rmse': rmse,
         'spearman_rho': spearman_r,

@@ -36,6 +36,7 @@ def home():
             "desc": "Explore clustering of Flemish cycling monitoring sites based on traffic patterns and site characteristics.",
             "url": "clusters",
         },
+        
         # {
         #     "icon": "📊",
         #     "title": "Circulation Plan Analysis",
